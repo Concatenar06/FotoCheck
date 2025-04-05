@@ -1,0 +1,28 @@
+name: mi_detector_imagenes
+description: App Flutter para detectar si una imagen es real, generada por IA o manipulada.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  image_picker: ^0.8.4+4
+  http: ^0.13.3
+  path_provider: ^2.1.1
+  share_plus: ^7.2.1
+  flutter_svg: ^2.0.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/
