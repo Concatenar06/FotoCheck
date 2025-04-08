@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 import '../routes/app_routes.dart';
 import '../widgets/imagen_previsualizacion.dart';
 import '../widgets/boton_personalizado.dart';
@@ -19,6 +21,10 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
   bool _isLoading = false;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  bool _isVideo = false;
+  File? _archivo;
 
   @override
   void initState() {
@@ -32,15 +38,54 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
+    
+    // Inicialización diferida para acceder a los argumentos
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _inicializarArchivo();
+    });
+  }
+  
+  void _inicializarArchivo() {
+    final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    _archivo = args['archivo'] as File;
+    _isVideo = args['esVideo'] as bool;
+    
+    if (_isVideo) {
+      _inicializarVideoController();
+    }
+  }
+  
+  void _inicializarVideoController() {
+    _videoController = VideoPlayerController.file(_archivo!)
+      ..initialize().then((_) {
+        // Inicializar Chewie después de que el controlador de video esté listo
+        _chewieController = ChewieController(
+          videoPlayerController: _videoController!,
+          autoPlay: true,
+          looping: true,
+          aspectRatio: _videoController!.value.aspectRatio,
+          errorBuilder: (context, errorMessage) {
+            return Center(
+              child: Text(
+                'Error al cargar el video: $errorMessage',
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          },
+        );
+        setState(() {});
+      });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _videoController?.dispose();
+    _chewieController?.dispose();
     super.dispose();
   }
 
-  Future<void> _analizarImagen(File imagen) async {
+  Future<void> _analizarArchivo() async {
     if (kIsWeb) {
       // En web mostramos un mensaje informativo
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,7 +104,9 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
 
     try {
       // Usamos el servicio de demostración que no requiere conexión al backend
-      final resultado = await ApiServicioDemo().analizarImagen(imagen);
+      final resultado = _isVideo 
+          ? await ApiServicioDemo().analizarVideo(_archivo!)
+          : await ApiServicioDemo().analizarImagen(_archivo!);
 
       if (!mounted) return;
 
@@ -74,9 +121,9 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Análisis completado exitosamente (Modo demostración)'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text('Análisis de ${_isVideo ? 'video' : 'imagen'} completado exitosamente (Modo demostración)'),
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
@@ -88,7 +135,7 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al analizar la imagen: $e'),
+          content: Text('Error al analizar el ${_isVideo ? 'video' : 'imagen'}: $e'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
         ),
@@ -98,12 +145,20 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
 
   @override
   Widget build(BuildContext context) {
-    final File imagen = ModalRoute.of(context)!.settings.arguments as File;
+    // Si _archivo es null, mostramos un indicador de carga
+    if (_archivo == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Previsualización'),
+        title: Text(_isVideo ? 'Previsualización de Video' : 'Previsualización de Imagen'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -124,16 +179,25 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
                   child: Column(
                     children: [
                       Text(
-                        'Vista previa de la imagen',
+                        _isVideo ? 'Vista previa del video' : 'Vista previa de la imagen',
                         style: Theme.of(context).textTheme.titleLarge,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       Hero(
-                        tag: 'imagen_seleccionada',
+                        tag: 'archivo_seleccionado',
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: ImagenPrevisualizacion(imagen: imagen),
+                          child: _isVideo && _chewieController != null
+                              ? AspectRatio(
+                                  aspectRatio: _videoController!.value.aspectRatio,
+                                  child: Chewie(controller: _chewieController!),
+                                )
+                              : _isVideo
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : ImagenPrevisualizacion(imagen: _archivo!),
                         ),
                       ),
                     ],
@@ -147,7 +211,7 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
                         const CircularProgressIndicator(),
                         const SizedBox(height: 16),
                         Text(
-                          'Analizando imagen...',
+                          _isVideo ? 'Analizando video...' : 'Analizando imagen...',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],
@@ -155,13 +219,14 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
                   : Column(
                       children: [
                         BotonPersonalizado(
-                          texto: 'Analizar Imagen (Demo)',
+                          texto: _isVideo ? 'Analizar Video (Demo)' : 'Analizar Imagen (Demo)',
                           icono: Icons.search,
-                          onPressed: () => _analizarImagen(imagen),
+                          onPressed: _analizarArchivo,
+                          color: _isVideo ? Colors.purple : null,
                         ),
                         const SizedBox(height: 16),
                         BotonPersonalizado(
-                          texto: 'Seleccionar otra imagen',
+                          texto: _isVideo ? 'Seleccionar otro video' : 'Seleccionar otra imagen',
                           icono: Icons.arrow_back,
                           onPressed: () => Navigator.pop(context),
                         ),

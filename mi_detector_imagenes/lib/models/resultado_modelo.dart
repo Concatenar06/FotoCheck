@@ -3,12 +3,14 @@ class ResultadoModelo {
   final double confianza;
   final Map<String, dynamic> detalles;
   final String? _colorHexadecimal; // Color personalizado opcional
+  final bool esVideo; // Indica si el resultado es para un video
 
   ResultadoModelo({
     required this.tipo, 
     required this.confianza, 
     required this.detalles,
     String? colorHexadecimal,
+    this.esVideo = false,
   }) : _colorHexadecimal = colorHexadecimal;
 
   factory ResultadoModelo.fromJson(Map<String, dynamic> json) {
@@ -16,6 +18,7 @@ class ResultadoModelo {
       tipo: json['tipo'],
       confianza: json['confianza'].toDouble(),
       detalles: json['detalles'],
+      esVideo: json['es_video'] ?? false,
     );
   }
 
@@ -24,17 +27,18 @@ class ResultadoModelo {
       'tipo': tipo,
       'confianza': confianza,
       'detalles': detalles,
+      'es_video': esVideo,
     };
   }
 
   String get tipoFormateado {
     switch (tipo) {
       case 'IA':
-        return 'Generada por IA';
+        return 'Generado por IA';
       case 'real':
-        return 'Imagen Real';
+        return esVideo ? 'Video Real' : 'Imagen Real';
       case 'manipulada':
-        return 'Imagen Manipulada';
+        return esVideo ? 'Video Manipulado' : 'Imagen Manipulada';
       default:
         return 'Desconocido';
     }

@@ -4,12 +4,14 @@ class BotonPersonalizado extends StatelessWidget {
   final String texto;
   final VoidCallback onPressed;
   final IconData? icono;
+  final Color? color;
 
   const BotonPersonalizado({
     Key? key,
     required this.texto, 
     required this.onPressed, 
-    this.icono
+    this.icono,
+    this.color,
   }) : super(key: key);
 
   @override
@@ -19,6 +21,7 @@ class BotonPersonalizado extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         textStyle: const TextStyle(fontSize: 16),
+        backgroundColor: color,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

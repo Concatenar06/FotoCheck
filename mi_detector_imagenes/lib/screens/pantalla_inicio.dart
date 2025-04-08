@@ -57,7 +57,10 @@ class _PantallaInicioState extends State<PantallaInicio> with SingleTickerProvid
         Navigator.pushNamed(
           context,
           AppRoutes.previsualizacion,
-          arguments: File(image.path),
+          arguments: {
+            'archivo': File(image.path),
+            'esVideo': false,
+          },
         );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -98,7 +101,10 @@ class _PantallaInicioState extends State<PantallaInicio> with SingleTickerProvid
         Navigator.pushNamed(
           context,
           AppRoutes.previsualizacion,
-          arguments: File(image.path),
+          arguments: {
+            'archivo': File(image.path),
+            'esVideo': false,
+          },
         );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -112,6 +118,94 @@ class _PantallaInicioState extends State<PantallaInicio> with SingleTickerProvid
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al tomar la foto: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+  
+  void _seleccionarVideo() async {
+    if (kIsWeb) {
+      // En web mostramos un mensaje informativo
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La funcionalidad completa no está disponible en la versión web. Por favor, utiliza la aplicación móvil o de escritorio.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+    
+    try {
+      final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+      if (video != null && mounted) {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.previsualizacion,
+          arguments: {
+            'archivo': File(video.path),
+            'esVideo': true,
+          },
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Video seleccionado correctamente'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar el video: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+  
+  void _grabarVideo() async {
+    if (kIsWeb) {
+      // En web mostramos un mensaje informativo
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La funcionalidad completa no está disponible en la versión web. Por favor, utiliza la aplicación móvil o de escritorio.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+    
+    try {
+      final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+      if (video != null && mounted) {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.previsualizacion,
+          arguments: {
+            'archivo': File(video.path),
+            'esVideo': true,
+          },
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Video grabado correctamente'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al grabar el video: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -148,7 +242,7 @@ class _PantallaInicioState extends State<PantallaInicio> with SingleTickerProvid
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  '¿La imagen es real o generada por IA?',
+                  '¿La imagen o video es real o generado por IA?',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -163,13 +257,22 @@ class _PantallaInicioState extends State<PantallaInicio> with SingleTickerProvid
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
-                      'Sube una imagen para analizarla y determinar si es real, generada por IA o manipulada digitalmente.',
+                      'Sube una imagen o video para analizarlo y determinar si es real, generado por IA o manipulado digitalmente.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),
                 ),
                 const SizedBox(height: 36),
+                
+                // Sección de imágenes
+                Text(
+                  'Análisis de Imágenes',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -190,6 +293,40 @@ class _PantallaInicioState extends State<PantallaInicio> with SingleTickerProvid
                     ),
                   ],
                 ),
+                
+                const SizedBox(height: 36),
+                
+                // Sección de videos
+                Text(
+                  'Análisis de Videos',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: BotonPersonalizado(
+                        icono: Icons.video_library,
+                        texto: 'Seleccionar Video',
+                        onPressed: _seleccionarVideo,
+                        color: Colors.purple,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: BotonPersonalizado(
+                        icono: Icons.videocam,
+                        texto: 'Grabar Video',
+                        onPressed: _grabarVideo,
+                        color: Colors.purple,
+                      ),
+                    ),
+                  ],
+                ),
+                
                 if (kIsWeb) ...[
                   const SizedBox(height: 24),
                   Container(
@@ -226,7 +363,7 @@ class _PantallaInicioState extends State<PantallaInicio> with SingleTickerProvid
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        'FotoCheck utiliza algoritmos avanzados para analizar patrones en las imágenes y detectar si son reales, generadas por IA o manipuladas digitalmente. El análisis se basa en características como inconsistencias en iluminación, texturas no naturales y patrones repetitivos típicos de imágenes generadas por IA.',
+                        'FotoCheck utiliza algoritmos avanzados para analizar patrones en imágenes y videos, detectando si son reales, generados por IA o manipulados digitalmente. El análisis se basa en características como inconsistencias en iluminación, texturas no naturales, patrones repetitivos, estabilidad de cámara, sincronización de audio y otros indicadores de manipulación.',
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.justify,
                       ),
