@@ -4,16 +4,18 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../routes/app_routes.dart';
 import '../widgets/imagen_previsualizacion.dart';
 import '../widgets/boton_personalizado.dart';
-import '../services/api_servicio.dart';
+import '../services/api_servicio_demo.dart'; // Cambiado a la versión de demostración
 
 class PantallaPrevisualizacion extends StatefulWidget {
   const PantallaPrevisualizacion({Key? key}) : super(key: key);
 
   @override
-  State<PantallaPrevisualizacion> createState() => _PantallaPrevisualizacionState();
+  State<PantallaPrevisualizacion> createState() =>
+      _PantallaPrevisualizacionState();
 }
 
-class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion> with SingleTickerProviderStateMixin {
+class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion>
+    with SingleTickerProviderStateMixin {
   bool _isLoading = false;
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -43,7 +45,8 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion> wit
       // En web mostramos un mensaje informativo
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('La funcionalidad de análisis no está disponible en la versión web. Por favor, utiliza la aplicación móvil o de escritorio.'),
+          content: Text(
+              'La funcionalidad de análisis no está disponible en la versión web. Por favor, utiliza la aplicación móvil o de escritorio.'),
           duration: Duration(seconds: 5),
         ),
       );
@@ -55,33 +58,34 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion> wit
     });
 
     try {
-      final resultado = await ApiServicio().analizarImagen(imagen);
-      
+      // Usamos el servicio de demostración que no requiere conexión al backend
+      final resultado = await ApiServicioDemo().analizarImagen(imagen);
+
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       Navigator.pushNamed(
         context,
         AppRoutes.resultado,
         arguments: resultado,
       );
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Análisis completado exitosamente'),
+          content: Text('Análisis completado exitosamente (Modo demostración)'),
           duration: Duration(seconds: 2),
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al analizar la imagen: $e'),
@@ -151,7 +155,7 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion> wit
                   : Column(
                       children: [
                         BotonPersonalizado(
-                          texto: 'Analizar Imagen',
+                          texto: 'Analizar Imagen (Demo)',
                           icono: Icons.search,
                           onPressed: () => _analizarImagen(imagen),
                         ),
@@ -168,11 +172,14 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion> wit
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDarkMode 
-                        ? Colors.amber.shade900.withAlpha(76) 
+                    color: isDarkMode
+                        ? Colors.amber.shade900.withAlpha(76)
                         : Colors.amber.shade100,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: isDarkMode ? Colors.amber.shade700 : Colors.amber.shade700),
+                    border: Border.all(
+                        color: isDarkMode
+                            ? Colors.amber.shade700
+                            : Colors.amber.shade700),
                   ),
                   child: Row(
                     children: [
@@ -183,7 +190,9 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion> wit
                           'La funcionalidad de análisis no está disponible en la versión web. Por favor, utiliza la aplicación móvil o de escritorio.',
                           textAlign: TextAlign.left,
                           style: TextStyle(
-                            color: isDarkMode ? Colors.amber.shade300 : Colors.amber.shade900,
+                            color: isDarkMode
+                                ? Colors.amber.shade300
+                                : Colors.amber.shade900,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -191,6 +200,39 @@ class _PantallaPrevisualizacionState extends State<PantallaPrevisualizacion> wit
                     ],
                   ),
                 ),
+              // Nota de demostración
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? Colors.blue.shade900.withAlpha(76)
+                      : Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: isDarkMode
+                          ? Colors.blue.shade700
+                          : Colors.blue.shade700),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'VERSIÓN DE DEMOSTRACIÓN: Esta versión genera resultados aleatorios y no requiere conexión a un servidor backend.',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          color: isDarkMode
+                              ? Colors.blue.shade300
+                              : Colors.blue.shade900,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
